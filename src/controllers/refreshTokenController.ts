@@ -29,11 +29,13 @@ export const refreshToken = (req: Request, res: Response) => {
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", // แก้ไขที่นี่
-      maxAge: 3600000, // 1 hour
+      sameSite: "strict",
+      maxAge: 3600000,
     });
 
-    return res.status(200).json({ message: "Access token refreshed" });
+    return res
+      .status(200)
+      .json({ message: "Access token refreshed", accessToken: newAccessToken });
   } catch (error) {
     console.error(error);
     return res.status(403).json({ message: "Invalid refresh token" });
