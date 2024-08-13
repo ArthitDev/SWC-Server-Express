@@ -30,14 +30,14 @@ const port = process.env.PORT || 3306;
 connect();
 
 // ตั้งค่ากลางสำหรับ rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 นาที
-  max: 100, // จำกัดแต่ละ IP ให้สามารถร้องขอได้ไม่เกิน 100 ครั้งต่อ 15 นาที
-  message: "ร้องขอมากเกินไปจาก IP นี้ กรุณาลองใหม่ภายหลัง.",
-});
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 นาที
+//   max: 100, // จำกัดแต่ละ IP ให้สามารถร้องขอได้ไม่เกิน 100 ครั้งต่อ 15 นาที
+//   message: "ร้องขอมากเกินไปจาก IP นี้ กรุณาลองใหม่ภายหลัง.",
+// });
 
 // นำ rate limiting middleware ไปใช้กับทุกคำร้องขอ
-app.use(limiter);
+// app.use(limiter);
 
 // ตั้งค่า middleware
 app.use(
