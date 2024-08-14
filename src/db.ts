@@ -2,6 +2,8 @@ import { createConnection, Connection } from "typeorm";
 import { Admin } from "./entities/Admin";
 import { PasswordReset } from "./entities/password_resets";
 import dotenv from "dotenv";
+import { Trick } from "./entities/Trick";
+import { DidYouKnow } from "./entities/Didyouknow";
 
 dotenv.config();
 
@@ -19,10 +21,11 @@ const connectWithRetry = async (retries: number): Promise<Connection> => {
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      entities: [Admin, PasswordReset],
+      entities: [Admin, PasswordReset, Trick, DidYouKnow],
       synchronize: process.env.NODE_ENV === "development",
       connectTimeout: 20000,
       logging: false,
+      timezone: "Z",
     });
 
     console.log("Database: Connected to database successfully.");

@@ -11,6 +11,8 @@ import cron from "node-cron";
 import axios from "axios";
 import { connect } from "./db";
 import { getMainInfo } from "./routes";
+import trickRoutes from "./routes/trickRoutes";
+import didyouknowRoutes from "./routes/didyouknowRoutes";
 
 // นำเข้าเส้นทาง
 import registerRoutes from "./routes/registerRoutes";
@@ -70,7 +72,10 @@ app.use("/api", refreshTokenRoutes);
 app.use("/api", adminProtectedRoutes);
 app.use("/api", logoutRoutes);
 app.use("/api", profileRoutes);
+// CRUD
 app.use("/api", passwordResetRouter);
+app.use("/api", trickRoutes);
+app.use("/api", didyouknowRoutes);
 
 // middleware สำหรับจัดการข้อผิดพลาดกลาง
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
