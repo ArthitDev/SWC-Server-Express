@@ -11,8 +11,6 @@ import cron from "node-cron";
 import axios from "axios";
 import { connect } from "./db";
 import { getMainInfo } from "./routes";
-import trickRoutes from "./routes/trickRoutes";
-import didyouknowRoutes from "./routes/didyouknowRoutes";
 
 // นำเข้าเส้นทาง
 import registerRoutes from "./routes/registerRoutes";
@@ -22,6 +20,10 @@ import refreshTokenRoutes from "./routes/refreshTokenRoutes";
 import logoutRoutes from "./routes/logoutRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import passwordResetRouter from "./routes/passwordResetRoutes";
+import trickRoutes from "./routes/trickRoutes";
+import didyouknowRoutes from "./routes/didyouknowRoutes";
+import woundRoutes from "./routes/woundRoutes";
+import articleRoutes from "./routes/articleRoutes";
 
 dotenv.config();
 
@@ -32,14 +34,14 @@ const port = process.env.PORT || 3306;
 connect();
 
 // ตั้งค่ากลางสำหรับ rate limiting
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 นาที
-//   max: 100, // จำกัดแต่ละ IP ให้สามารถร้องขอได้ไม่เกิน 100 ครั้งต่อ 15 นาที
-//   message: "ร้องขอมากเกินไปจาก IP นี้ กรุณาลองใหม่ภายหลัง.",
-// });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 นาที
+  max: 100, // จำกัดแต่ละ IP ให้สามารถร้องขอได้ไม่เกิน 100 ครั้งต่อ 15 นาที
+  message: "ร้องขอมากเกินไปจาก IP นี้ กรุณาลองใหม่ภายหลัง.",
+});
 
 // นำ rate limiting middleware ไปใช้กับทุกคำร้องขอ
-// app.use(limiter);
+app.use(limiter);
 
 // ตั้งค่า middleware
 app.use(
@@ -72,8 +74,11 @@ app.use("/api", refreshTokenRoutes);
 app.use("/api", adminProtectedRoutes);
 app.use("/api", logoutRoutes);
 app.use("/api", profileRoutes);
-// CRUD
 app.use("/api", passwordResetRouter);
+
+// CRUD
+app.use("/api", woundRoutes);
+app.use("/api", articleRoutes);
 app.use("/api", trickRoutes);
 app.use("/api", didyouknowRoutes);
 

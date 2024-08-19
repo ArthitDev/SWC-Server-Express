@@ -24,9 +24,10 @@ export const getAllDidyouknow = async (_: Request, res: Response) => {
       return res.status(200).json({ message: "No Didyouknow found" });
     }
 
-    res.status(200).json(DidYouKnow);
+    return res.status(200).json(didyouknow);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching didyouknow", error });
+    console.error("Error fetching DidYouKnow:", error);
+    res.status(500).json({ message: "Error fetching DidYouKnow", error });
   }
 };
 
