@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import bodyParser from "body-parser";
-import rateLimit from "express-rate-limit";
 import compression from "compression";
 import morgan from "morgan";
 import cron from "node-cron";
@@ -25,23 +24,21 @@ import didyouknowRoutes from "./routes/didyouknowRoutes";
 import woundRoutes from "./routes/woundRoutes";
 import articleRoutes from "./routes/articleRoutes";
 
-dotenv.config();
+if (process.env.NODE_ENV === "production") {
+  dotenv.config({ path: ".env.prod" });
+  console.log("Environment: Production");
+} else {
+  dotenv.config({ path: ".env.local" });
+  console.log("Environment: Development");
+}
 
 const app = express();
 const port = process.env.PORT || 3306;
+const host = process.env.HOST || 'localhost'; 
 
 // เชื่อมต่อฐานข้อมูล
 connect();
 
-// ตั้งค่ากลางสำหรับ rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 นาที
-  max: 100, // จำกัดแต่ละ IP ให้สามารถร้องขอได้ไม่เกิน 100 ครั้งต่อ 15 นาที
-  message: "ร้องขอมากเกินไปจาก IP นี้ กรุณาลองใหม่ภายหลัง.",
-});
-
-// นำ rate limiting middleware ไปใช้กับทุกคำร้องขอ
-app.use(limiter);
 
 // ตั้งค่า middleware
 app.use(
@@ -89,16 +86,18 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ตั้งเวลาเพื่อร้องขอไปยัง keep-alive endpoint เป็นระยะ ๆ
-cron.schedule("*/10 * * * *", async () => {
+cron.schedule("*/25 * * * *", async () => {
   try {
-    await axios.get("http://localhost:3000/keep-alive");
-    console.log("Sedning Keep-Alive....");
+    await axios.get(`${process.env.BASE_URL}/keep-alive`);
+    console.log("Sending Keep-Alive....");
   } catch (error) {
     console.error("Error Cannot Send Keep-Alive", error);
   }
 });
 
+
+
 // เริ่มต้นเซิร์ฟเวอร์
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at http://${host}:${port}`);
 });
