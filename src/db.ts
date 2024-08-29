@@ -6,6 +6,7 @@ import { Trick } from "./entities/Trick";
 import { DidYouKnow } from "./entities/Didyouknow";
 import { Wound } from "./entities/Wound";
 import { Article } from "./entities/Article";
+import { ArticleClick } from "./entities/Article_Clicks";
 
 dotenv.config();
 
@@ -23,7 +24,15 @@ const connectWithRetry = async (retries: number): Promise<Connection> => {
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
-      entities: [Admin, PasswordReset, Trick, DidYouKnow, Wound, Article],
+      entities: [
+        Admin,
+        PasswordReset,
+        Trick,
+        DidYouKnow,
+        Wound,
+        Article,
+        ArticleClick,
+      ],
       synchronize: process.env.NODE_ENV === "development",
       connectTimeout: 20000,
       logging: false,

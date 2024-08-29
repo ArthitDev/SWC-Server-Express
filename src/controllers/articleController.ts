@@ -1,26 +1,11 @@
 import { Request, Response } from "express";
 import { getRepository } from "typeorm";
-import { google } from "googleapis";
-import multer from "multer";
-import path from "path";
 import fs from "fs";
+import path from "path";
 import { Article } from "../entities/Article";
 
-// โหลด API keys และการตั้งค่า Google API
-const keysPath = path.join(__dirname, "../apikeys.json");
-const apiKeys = JSON.parse(fs.readFileSync(keysPath, "utf8"));
 
-const auth = new google.auth.GoogleAuth({
-  keyFile: keysPath,
-  scopes: ["https://www.googleapis.com/auth/drive.file"],
-});
-
-const drive = google.drive({ version: "v3", auth });
-
-// กำหนด multer สำหรับการจัดการการอัปโหลดไฟล์
-const upload = multer({ dest: "uploads/" });
-
-// ฟังก์ชันสำหรับสร้างข้อมูลแผลพร้อมกับการอัปโหลดรูปภาพ
+// ฟังก์ชันสำหรับสร้างข้อมูลบทความพร้อมกับการอัปโหลดรูปภาพ
 export const createArticle = async (req: Request, res: Response) => {
   const articleRepository = getRepository(Article);
 
@@ -31,30 +16,15 @@ export const createArticle = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const filePath = req.file.path;
-    const folderId = "1hTIuFrQ1TTZmLCUeplh8ZR9adXgBKRJx";
+    // Get the relative path for storing in the database
+    const filePath = `article_image/${req.file.filename}`;
 
-    // อัปโหลดไฟล์ไปยัง Google Drive
-    const response = await drive.files.create({
-      requestBody: {
-        name: req.file.originalname,
-        mimeType: req.file.mimetype,
-        parents: [folderId],
-      },
-      media: {
-        mimeType: req.file.mimetype,
-        body: fs.createReadStream(filePath),
-      },
-    });
-
-    // ลบไฟล์ในระบบหลังจากอัปโหลดเสร็จ
-    fs.unlinkSync(filePath);
 
     // สร้างข้อมูลบทความและบันทึกลงฐานข้อมูล
     const newArticle = articleRepository.create({
       article_name,
       author_name,
-      article_cover: response.data.id,
+      article_cover: filePath,
       article_content,
       ref,
     } as Article);
@@ -63,7 +33,8 @@ export const createArticle = async (req: Request, res: Response) => {
 
     res.status(201).json(newArticle);
   } catch (error) {
-    res.status(500).json({ message: "Error creating wound", error });
+    console.error("Error creating wound:", error);
+    res.status(500).json({ message: "Error creating article", error });
   }
 };
 
@@ -72,6 +43,11 @@ export const getAllArticles = async (req: Request, res: Response) => {
   try {
     const articleRepository = getRepository(Article);
     const articles = await articleRepository.find();
+
+    if (articles.length === 0) {
+      return res.status(200).json({ message: "No Articles found" });
+    }
+
     res.status(200).json(articles);
   } catch (error) {
     res.status(500).json({ message: "Error fetching articles", error });
@@ -115,34 +91,25 @@ export const updateArticle = async (req: Request, res: Response) => {
     article.article_content = article_content ?? article.article_content;
     article.ref = ref ?? article.ref;
 
-    // อัปเดตรูปภาพถ้ามีการอัปโหลดใหม่
     if (req.file) {
-      const filePath = req.file.path;
-      const folderId = "1hTIuFrQ1TTZmLCUeplh8ZR9adXgBKRJx";
-
-      // อัปโหลดไฟล์ใหม่ไปยัง Google Drive
-      const response = await drive.files.create({
-        requestBody: {
-          name: req.file.originalname,
-          mimeType: req.file.mimetype,
-          parents: [folderId],
-        },
-        media: {
-          mimeType: req.file.mimetype,
-          body: fs.createReadStream(filePath),
-        },
-      });
-
-      // ลบไฟล์ในระบบหลังจากอัปโหลดเสร็จ
-      fs.unlinkSync(filePath);
-      // ตรวจสอบว่า response.data.id ไม่เป็น undefined
-      if (response.data.id) {
-        article.article_cover = response.data.id;
-      } else {
-        res.status(500).json({ message: "Error: File ID is undefined" });
-        return;
+      // Delete the old file
+      if (article.article_cover) {
+        const oldFilePath = path.join(
+          __dirname,
+          "../../uploads",
+          article.article_cover
+        );
+        fs.unlink(oldFilePath, (err) => {
+          if (err) console.error("Error deleting old file:", err);
+        });
       }
+
+      // Update with the new file path
+      const filePath = `article_image/${req.file.filename}`;
+      article.article_cover = filePath;
     }
+
+   
     await articleRepository.save(article);
     res.status(200).json(article);
   } catch (error) {
@@ -150,7 +117,7 @@ export const updateArticle = async (req: Request, res: Response) => {
   }
 };
 
-// ฟังก์ชันสำหรับลบข้อมูลแผล
+// ฟังก์ชันสำหรับลบข้อมูลบทความ
 export const deleteArticle = async (req: Request, res: Response) => {
   try {
     const articleRepository = getRepository(Article);
@@ -162,10 +129,11 @@ export const deleteArticle = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    // ลบไฟล์รูปภาพจาก Google Drive
+    // Delete the image file
     if (article.article_cover) {
-      await drive.files.delete({
-        fileId: article.article_cover,
+      const filePath = path.join(__dirname, "../../uploads", article.article_cover);
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Error deleting file:", err);
       });
     }
 
@@ -176,5 +144,4 @@ export const deleteArticle = async (req: Request, res: Response) => {
   }
 };
 
-// Middleware สำหรับการอัปโหลดไฟล์
-export const uploadMiddleware = upload.single("image");
+

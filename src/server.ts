@@ -10,6 +10,8 @@ import cron from "node-cron";
 import axios from "axios";
 import { connect } from "./db";
 import { getMainInfo } from "./routes";
+import http from "http"; 
+import WebSocket from "ws"; 
 
 // นำเข้าเส้นทาง
 import registerRoutes from "./routes/registerRoutes";
@@ -23,6 +25,9 @@ import trickRoutes from "./routes/trickRoutes";
 import didyouknowRoutes from "./routes/didyouknowRoutes";
 import woundRoutes from "./routes/woundRoutes";
 import articleRoutes from "./routes/articleRoutes";
+import uploadsRoutes from "./routes/uploadsRoutes";
+import articleClickRoutes from "./routes/articleClickRoutes";
+import articleTopRoutes from "./routes/articleTopRoutes";
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: ".env.prod" });
@@ -34,11 +39,18 @@ if (process.env.NODE_ENV === "production") {
 
 const app = express();
 const port = process.env.PORT || 3306;
-const host = process.env.HOST || 'localhost'; 
+const host = process.env.HOST || "localhost";
+
+
+// สร้าง HTTP server
+const server = http.createServer(app);
+
+// สร้าง WebSocket server และเชื่อมต่อกับ HTTP server
+const wss = new WebSocket.Server({ server });
+
 
 // เชื่อมต่อฐานข้อมูล
 connect();
-
 
 // ตั้งค่า middleware
 app.use(
@@ -50,7 +62,35 @@ app.use(
   })
 );
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "img-src": ["'self'", "data:", "https:", "http:"],
+        "script-src": ["'self'", "'unsafe-inline'", "https:", "http:"],
+        "style-src": ["'self'", "'unsafe-inline'", "https:", "http:"],
+        "connect-src": ["'self'", "http://localhost:3000"],
+        "frame-ancestors": ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    referrerPolicy: { policy: "no-referrer" },
+    xssFilter: true,
+    frameguard: { action: "deny" },
+    hidePoweredBy: true,
+    hsts: {
+      maxAge: 60 * 60 * 24 * 365,
+      includeSubDomains: true,
+      preload: true,
+    },
+    ieNoOpen: true,
+    noSniff: true,
+  })
+);
 app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(compression());
@@ -74,10 +114,56 @@ app.use("/api", profileRoutes);
 app.use("/api", passwordResetRouter);
 
 // CRUD
-app.use("/api", woundRoutes);
-app.use("/api", articleRoutes);
-app.use("/api", trickRoutes);
-app.use("/api", didyouknowRoutes);
+app.use(
+  "/api",
+  (req, res, next) => {
+    req.app.set("wss", wss);
+    next();
+  },
+  woundRoutes
+);
+app.use(
+  "/api",
+  (req, res, next) => {
+    req.app.set("wss", wss);
+    next();
+  },
+  articleRoutes
+);
+app.use(
+  "/api",
+  (req, res, next) => {
+    req.app.set("wss", wss);
+    next();
+  },
+  trickRoutes
+);
+app.use(
+  "/api",
+  (req, res, next) => {
+    req.app.set("wss", wss);
+    next();
+  },
+  didyouknowRoutes
+);
+
+// Upload
+app.use(
+  "/api",
+  (req, res, next) => {
+    req.app.set("wss", wss);
+    next();
+  },
+  uploadsRoutes
+);
+
+//Track Click Article
+app.use(
+  "/api", articleClickRoutes);
+
+//Top Click Article
+app.use("/api", articleTopRoutes);
+
 
 // middleware สำหรับจัดการข้อผิดพลาดกลาง
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -95,9 +181,22 @@ cron.schedule("*/25 * * * *", async () => {
   }
 });
 
-
-
-// เริ่มต้นเซิร์ฟเวอร์
-app.listen(port, () => {
+// เริ่มต้น HTTP และ WebSocket server
+server.listen(port, () => {
   console.log(`Server running at http://${host}:${port}`);
 });
+
+wss.on("connection", (ws) => {
+  console.log("New client connected");
+
+  ws.send(JSON.stringify({ message: "Welcome to WebSocket server!" }));
+
+  ws.on("message", (message) => {
+    console.log("Received from client:", message);
+  });
+
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
+});
+

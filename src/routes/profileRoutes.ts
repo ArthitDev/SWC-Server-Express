@@ -20,6 +20,9 @@ router.get(
     try {
       const user = await findUserById(userId);
       if (!user) {
+        // ถ้าไม่พบผู้ใช้ ลบคุกกี้และส่งสถานะ 404
+        res.clearCookie("accessToken", { path: "/" });
+        res.clearCookie("refreshToken", { path: "/" });
         return res.status(404).json({ message: "User not found" });
       }
 
@@ -34,5 +37,6 @@ router.get(
     }
   }
 );
+
 
 export default router;

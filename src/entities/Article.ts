@@ -1,9 +1,11 @@
+import { ArticleClick } from "./Article_Clicks";
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from "typeorm";
 
 @Entity("article_data")
@@ -11,6 +13,9 @@ export class Article {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @OneToMany(() => ArticleClick, (click) => click.article)
+  clicks: ArticleClick[];
+  
   @Column({ type: "varchar", length: 150 })
   article_name: string;
 

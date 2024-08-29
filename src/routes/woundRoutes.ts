@@ -5,23 +5,75 @@ import {
   getWoundById,
   updateWound,
   deleteWound,
-  uploadMiddleware,
 } from "../controllers/woundController";
 import { authenticateToken } from "../middlewares/authMiddleware";
+import { uploadWoundImage } from "../middlewares/uploadMiddleware";
+import WebSocket from "ws"; 
 
 const router = Router();
 
-// Route สำหรับการสร้างข้อมูลแผลพร้อมรูปภาพ
-router.post("/wounds", authenticateToken, uploadMiddleware, createWound);
+const sendWebSocketMessage = (wss: WebSocket.Server, message: string) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+};
 
-// Route สำหรับการอ่านข้อมูลแผลทั้งหมดและเฉพาะเจาะจง
+
+router.post(
+  "/wounds",
+  authenticateToken,
+  uploadWoundImage,
+  async (req, res, next) => {
+    try {
+      const wss = req.app.get("wss") as WebSocket.Server; 
+      await createWound(req, res);
+      sendWebSocketMessage(
+        wss,
+        JSON.stringify({ eventType: "UPDATE_WOUNDS", data: "New wound added" })
+      );
+    } catch (error) {
+      console.error("Error creating wound:", error);
+      next(error);
+    }
+  }
+);
+
 router.get("/wounds", getAllWounds);
 router.get("/wounds/:id", getWoundById);
 
-// Route สำหรับการอัปเดตข้อมูลแผล
-router.put("/wounds/:id", authenticateToken,uploadMiddleware, updateWound);
+router.put(
+  "/wounds/:id",
+  authenticateToken,
+  uploadWoundImage,
+  async (req, res, next) => {
+    try {
+      const wss = req.app.get("wss") as WebSocket.Server; 
+      await updateWound(req, res);
+      sendWebSocketMessage(
+        wss,
+        JSON.stringify({ eventType: "UPDATE_WOUNDS", data: "Wound updated" })
+      );
+    } catch (error) {
+      console.error("Error updating wound:", error);
+      next(error);
+    }
+  }
+);
 
-// Route สำหรับการลบข้อมูลแผล (เพิ่ม authenticateToken)
-router.delete("/wounds/:id", authenticateToken, deleteWound);
+router.delete("/wounds/:id", authenticateToken, async (req, res, next) => {
+  try {
+    const wss = req.app.get("wss") as WebSocket.Server; 
+    await deleteWound(req, res);
+    sendWebSocketMessage(
+      wss,
+      JSON.stringify({ eventType: "UPDATE_WOUNDS", data: "Wound deleted" })
+    );
+  } catch (error) {
+    console.error("Error deleting wound:", error);
+    next(error);
+  }
+});
 
 export default router;
