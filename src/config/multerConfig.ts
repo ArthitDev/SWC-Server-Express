@@ -11,7 +11,7 @@ const createDirectoryIfNotExists = (directory: string) => {
 };
 
 // กำหนดโฟลเดอร์สำหรับเก็บรูปภาพแต่ละประเภท
-const baseUploadDir = path.join(__dirname, "../../uploads");
+const baseUploadDir = path.join(__dirname, "../uploads");
 const woundImageDir = path.join(baseUploadDir, "wound_image");
 const articleImageDir = path.join(baseUploadDir, "article_image");
 

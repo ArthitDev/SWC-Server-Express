@@ -7,6 +7,7 @@ import { DidYouKnow } from "./entities/Didyouknow";
 import { Wound } from "./entities/Wound";
 import { Article } from "./entities/Article";
 import { ArticleClick } from "./entities/Article_Clicks";
+import { WoundType } from "./entities/WoundType";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ const connectWithRetry = async (retries: number): Promise<Connection> => {
         Wound,
         Article,
         ArticleClick,
+        WoundType,
       ],
       synchronize: process.env.NODE_ENV === "development",
       connectTimeout: 20000,

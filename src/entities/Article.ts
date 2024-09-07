@@ -15,18 +15,24 @@ export class Article {
 
   @OneToMany(() => ArticleClick, (click) => click.article)
   clicks: ArticleClick[];
-  
+
   @Column({ type: "varchar", length: 150 })
   article_name: string;
-
-  @Column({ type: "varchar", length: 50 })
-  author_name: string;
 
   @Column({ type: "longtext" })
   article_cover: string;
 
   @Column({ type: "longtext" })
   article_content: string;
+
+  @Column({ type: "longtext" })
+  article_note: string;
+
+  @Column({
+    type: "enum",
+    enum: ["การแพทย์", "เทคโนโลยี", "ทั่วไป"],
+  })
+  category: string;
 
   @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   created_at: Date;
@@ -38,6 +44,6 @@ export class Article {
   })
   updated_at: Date;
 
-  @Column({ type: "text", nullable: true })
-  ref: string;
+  @Column({ type: "json", nullable: true })
+  ref: { id: string; value: string }[];
 }

@@ -1,7 +1,7 @@
 {
   "name": "swc-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.ts",
   "description": "Back-End Server for SWC",
   "scripts": {
     "start": "ts-node src/server.ts",
@@ -34,7 +34,8 @@
     "typeorm": "^0.3.20",
     "typescript": "^5.5.4",
     "uuid": "^10.0.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -53,8 +54,7 @@
     "@types/node": "^22.4.1",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.15",
-    "@types/uuid": "^10.0.0",
-    "ts-node": "^10.9.2"
+    "@types/uuid": "^10.0.0"
   },
   "keywords": [],
   "author": "",

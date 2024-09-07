@@ -10,10 +10,10 @@ import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = Router();
 
-router.post("/didyouknow", authenticateToken ,createDidyouknow);
-router.get("/didyouknow", getAllDidyouknow);
-router.get("/didyouknow/:id", getDidyouknowById);
-router.put("/didyouknow/:id", authenticateToken,updateDidyouknow);
-router.delete("/didyouknow/:id", authenticateToken ,deleteDidyouknow);
+router.post("/didyouknows", authenticateToken ,createDidyouknow);
+router.get("/didyouknows", getAllDidyouknow);
+router.get("/didyouknows/:id", getDidyouknowById);
+router.put("/didyouknows/:id", authenticateToken,updateDidyouknow);
+router.delete("/didyouknows/:id", authenticateToken ,deleteDidyouknow);
 
 export default router;

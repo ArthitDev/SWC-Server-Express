@@ -20,6 +20,9 @@ export class Wound {
   @Column({ type: "longtext" })
   wound_content: string;
 
+  @Column({ type: "longtext" })
+  wound_note: string;
+
   @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   created_at: Date;
 
@@ -30,6 +33,6 @@ export class Wound {
   })
   updated_at: Date;
 
-  @Column({ type: "text", nullable: true })
-  ref: string;
+  @Column({ type: "json", nullable: true })
+  ref: { id: string; value: string }[];
 }

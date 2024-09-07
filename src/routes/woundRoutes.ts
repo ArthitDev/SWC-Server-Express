@@ -5,6 +5,7 @@ import {
   getWoundById,
   updateWound,
   deleteWound,
+  getAdditionalData,
 } from "../controllers/woundController";
 import { authenticateToken } from "../middlewares/authMiddleware";
 import { uploadWoundImage } from "../middlewares/uploadMiddleware";
@@ -75,5 +76,8 @@ router.delete("/wounds/:id", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
+
+router.get("/wounds/type/:wound_type", getAdditionalData);
+
 
 export default router;
