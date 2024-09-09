@@ -4,12 +4,17 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from "typeorm";
+import { WoundClick } from "./Wound_Clicks";
 
 @Entity("wound_data")
 export class Wound {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @OneToMany(() => WoundClick, (click) => click.wound)
+  clicks: WoundClick[];
 
   @Column({ type: "varchar", length: 150 })
   wound_name: string;

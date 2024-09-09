@@ -27,7 +27,9 @@ import woundRoutes from "./routes/woundRoutes";
 import articleRoutes from "./routes/articleRoutes";
 import uploadsRoutes from "./routes/uploadsRoutes";
 import articleClickRoutes from "./routes/articleClickRoutes";
+import woundClickRoutes from "./routes/woundClickRoutes";
 import articleTopRoutes from "./routes/articleTopRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: ".env.prod" });
@@ -160,9 +162,13 @@ app.use(
 //Track Click Article
 app.use(
   "/api", articleClickRoutes);
+app.use("/api",woundClickRoutes);
 
 //Top Click Article
 app.use("/api", articleTopRoutes);
+
+//Dashbord Data
+app.use("/api", dashboardRoutes);
 
 
 // middleware สำหรับจัดการข้อผิดพลาดกลาง

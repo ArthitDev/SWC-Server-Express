@@ -1,35 +1,35 @@
 import { Request, Response } from "express";
 import { getRepository } from "typeorm";
-import { ArticleClick } from "../entities/Article_Clicks";
-import { Article } from "../entities/Article";
+import { Wound } from "../entities/Wound";
+import { WoundClick } from "../entities/Wound_Clicks";
 
-export const articleClick = async (req: Request, res: Response) => {
-  const { articleId } = req.params;
+export const woundClick = async (req: Request, res: Response) => {
+  const { woundId } = req.params;
   const { click_count } = req.body;
 
-  // ตรวจสอบว่า articleId เป็นตัวเลขหรือไม่
-  if (!articleId || isNaN(parseInt(articleId, 10))) {
+  // ตรวจสอบว่า wounId เป็นตัวเลขหรือไม่
+  if (!woundId || isNaN(parseInt(woundId, 10))) {
     return res.status(400).json({ message: "Invalid article ID" });
   }
 
   try {
-    const articleRepository = getRepository(Article);
-    const clickRepository = getRepository(ArticleClick);
+    const woundRepository = getRepository(Wound);
+    const clickRepository = getRepository(WoundClick);
 
-    const articleIdNumber = parseInt(articleId, 10);
+    const woundIdNumber = parseInt(woundId, 10);
 
-    // ตรวจสอบว่ามี Article ที่มี articleId นี้หรือไม่
-    const article = await articleRepository.findOne({
-      where: { id: articleIdNumber },
+    // ตรวจสอบว่ามี wound ที่มี woundId นี้หรือไม่
+    const wound = await woundRepository.findOne({
+      where: { id: woundIdNumber },
     });
 
-    if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+    if (!wound) {
+      return res.status(404).json({ message: "Wound not found" });
     }
 
     // ตรวจสอบว่ามี record ใน ArticleClick ที่ตรงกับ article_id หรือไม่
     let click = await clickRepository.findOne({
-      where: { article: { id: articleIdNumber } },
+      where: { wound: { id: woundIdNumber } },
     });
 
     if (click) {
@@ -37,8 +37,8 @@ export const articleClick = async (req: Request, res: Response) => {
       click.click_count += click_count || 0;
     } else {
       // ถ้าไม่มี record ให้สร้างใหม่และตั้งค่า click_count เริ่มต้น
-      click = new ArticleClick();
-      click.article = article;
+      click = new WoundClick();
+      click.wound = wound;
       click.click_count = click_count || 0;
     }
 
@@ -47,7 +47,7 @@ export const articleClick = async (req: Request, res: Response) => {
 
     return res
       .status(200)
-      .json({ message: "Click count updated successfully"});
+      .json({ message: "Click count updated successfully" });
   } catch (error) {
     console.error("Error tracking click:", error);
     return res.status(500).json({ message: "Internal server error", error });

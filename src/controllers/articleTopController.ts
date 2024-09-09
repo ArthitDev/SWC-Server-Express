@@ -6,20 +6,21 @@ import { ArticleClick } from "../entities/Article_Clicks";
 export class ArticleTopController {
   public async getTopArticles(req: Request, res: Response): Promise<void> {
     try {
-      // สร้าง QueryBuilder ด้วย TypeORM
       const topArticles = await getRepository(Article)
         .createQueryBuilder("article")
-        .leftJoinAndSelect("article.clicks", "click") // เชื่อมกับความสัมพันธ์ clicks ที่กำหนดไว้ใน Entity
-        .select([
-          "article.id",
-          "article.article_name",
-          "click.click_count",
-        ])
+        .leftJoinAndSelect("article.clicks", "click")
+        .select(["article.id", "article.article_name", "click.click_count"])
         .orderBy("click.click_count", "DESC")
         .limit(5)
         .getMany();
 
-      res.json(topArticles);
+      // ดึงค่า click_count จากอาร์เรย์ clicks
+      const formattedArticles = topArticles.map((article) => ({
+        ...article,
+        click_count: article.clicks[0]?.click_count || 0,
+      }));
+
+      res.json(formattedArticles);
     } catch (error: unknown) {
       console.error("Error fetching top articles:", error);
       res.status(500).json({
@@ -29,5 +30,6 @@ export class ArticleTopController {
     }
   }
 }
+
 
 export const articleTopController = new ArticleTopController();
