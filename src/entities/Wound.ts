@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from "typeorm";
 import { WoundClick } from "./Wound_Clicks";
+import { WoundTypes } from "./Wound_Types";
 
 @Entity("wound_data")
 export class Wound {
@@ -15,6 +16,12 @@ export class Wound {
 
   @OneToMany(() => WoundClick, (click) => click.wound)
   clicks: WoundClick[];
+
+  @OneToMany(() => WoundTypes, (type) => type.wound, {
+    cascade: true,
+    onDelete: "CASCADE",
+  })
+  types: WoundTypes[];
 
   @Column({ type: "varchar", length: 150 })
   wound_name: string;

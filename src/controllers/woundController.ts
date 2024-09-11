@@ -1,27 +1,34 @@
 // src/controllers/woundController.ts
 import { Request, Response } from "express";
-import { getRepository } from "typeorm";
+import { Brackets, getRepository } from "typeorm";
+import { WoundTypes } from "../entities/Wound_Types";
 import { Wound } from "../entities/Wound";
 import path from "path";
 import fs from "fs";
 
-// Function to create a wound entry with image upload
+
+
 export const createWound = async (req: Request, res: Response) => {
   const woundRepository = getRepository(Wound);
+  const woundTypeRepository = getRepository(WoundTypes);
 
   try {
-    const { wound_name, wound_content, wound_note , ref } = req.body;
+    const {
+      wound_name, // ใช้ wound_name สำหรับ wound_name_th
+      wound_content,
+      wound_note,
+      wound_name_en, // รับค่า wound_name_en จากฟอร์ม
+      ref,
+    } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Get the relative path for storing in the database
     const filePath = `wound_image/${req.file.filename}`;
-
     const refObject = ref ? JSON.parse(ref) : null;
 
-    // Create a new wound entry and save to the database
+    // สร้างรายการใหม่ใน wound_data
     const newWound = woundRepository.create({
       wound_name,
       wound_cover: filePath,
@@ -30,16 +37,25 @@ export const createWound = async (req: Request, res: Response) => {
       ref: refObject,
     } as Wound);
 
-    await woundRepository.save(newWound);
+    const savedWound = await woundRepository.save(newWound);
 
-    res.status(201).json(newWound);
+    // สร้างรายการใหม่ใน wound_type โดยใช้ wound_name_th และ wound_name_en
+    const newWoundType = woundTypeRepository.create({
+      wound_name_th: wound_name, // ตั้งค่า wound_name_th ให้เท่ากับ wound_name
+      wound_name_en, // ใช้ wound_name_en จากฟอร์ม
+      wound: savedWound, // เชื่อมโยงกับข้อมูลใน wound_data
+    } as WoundTypes);
+
+    await woundTypeRepository.save(newWoundType);
+
+    res.status(201).json({ wound: savedWound, woundType: newWoundType });
   } catch (error) {
     console.error("Error creating wound:", error);
     res.status(500).json({ message: "Error creating wound", error });
   }
 };
 
-// Function to get all wound entries with pagination and search functionality
+
 export const getAllWounds = async (req: Request, res: Response) => {
   try {
     const woundRepository = getRepository(Wound);
@@ -47,19 +63,24 @@ export const getAllWounds = async (req: Request, res: Response) => {
     // รับพารามิเตอร์ page, limit และ search จาก query string
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 10;
-    const search = req.query.search ? (req.query.search as string) : '';
+    const search = req.query.search ? (req.query.search as string) : "";
 
     // คำนวณค่า offset
     const offset = (page - 1) * limit;
 
-    // สร้าง query สำหรับค้นหาข้อมูล
-    const query = woundRepository.createQueryBuilder('wound')
+    // สร้าง query สำหรับค้นหาข้อมูลจาก wound_data และ wound_type
+    const query = woundRepository
+      .createQueryBuilder("wound")
+      .leftJoinAndSelect("wound.types", "woundTypes") // JOIN กับตาราง wound_type
       .skip(offset)
       .take(limit);
 
     // ตรวจสอบว่ามีพารามิเตอร์ search หรือไม่
     if (search) {
-      query.where('wound.wound_name LIKE :search OR wound.wound_content LIKE :search OR wound.wound_note LIKE :search', { search: `%${search}%` });
+      query.where(
+        "wound.wound_name LIKE :search OR wound.wound_content LIKE :search OR wound.wound_note LIKE :search",
+        { search: `%${search}%` }
+      );
     }
 
     // ดึงข้อมูลจากฐานข้อมูล
@@ -69,16 +90,29 @@ export const getAllWounds = async (req: Request, res: Response) => {
       return res.status(200).json({ message: "No wounds found" });
     }
 
+    // ส่งข้อมูล wound พร้อมข้อมูลจาก wound_type กลับไป
     res.status(200).json({
-      data: wounds,
+      data: wounds.map((wound) => ({
+        id: wound.id,
+        wound_name: wound.wound_name,
+        wound_name_en: wound.types[0]?.wound_name_en || "", // ดึง wound_name_en จาก wound_type
+        wound_content: wound.wound_content,
+        wound_note: wound.wound_note,
+        wound_cover: wound.wound_cover,
+        created_at: wound.created_at,
+        updated_at: wound.updated_at,
+        ref: wound.ref,
+      })),
       totalItems: total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     });
   } catch (error) {
+    console.error("Error fetching wounds:", error);
     res.status(500).json({ message: "Error fetching wounds", error });
   }
 };
+
 
 
 
@@ -100,10 +134,11 @@ export const getWoundById = async (req: Request, res: Response) => {
   }
 };
 
-// Function to update a wound entry
 export const updateWound = async (req: Request, res: Response) => {
+  const woundRepository = getRepository(Wound);
+  const woundTypeRepository = getRepository(WoundTypes);
+
   try {
-    const woundRepository = getRepository(Wound);
     const wound = await woundRepository.findOne({
       where: { id: parseInt(req.params.id, 10) },
     });
@@ -112,46 +147,65 @@ export const updateWound = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Wound not found" });
     }
 
-    const { wound_name, wound_content, wound_note, ref } = req.body;
-    wound.wound_name = wound_name ?? wound.wound_name;
+    const {
+      wound_name, // ข้อมูลชื่อแผลจากฟอร์ม (ภาษาไทย)
+      wound_content,
+      wound_note,
+      wound_name_en, // ข้อมูลชื่อแผลจากฟอร์ม (ภาษาอังกฤษ)
+      ref,
+    } = req.body;
+
+    // อัปเดตข้อมูล wound_data
+    wound.wound_name = wound_name ?? wound.wound_name; // อัปเดต wound_name
     wound.wound_content = wound_content ?? wound.wound_content;
     wound.wound_note = wound_note ?? wound.wound_note;
-    wound.ref = ref ?? wound.ref;
-
-    // ตรวจสอบว่า ref เป็น JSON object หรือไม่
-    if (ref) {
-      wound.ref = JSON.parse(ref);
-    }
+    wound.ref = ref ? JSON.parse(ref) : wound.ref;
 
     if (req.file) {
-      // Delete the old file
-      if (wound.wound_cover) {
-        const oldFilePath = path.join(
-          __dirname,
-          "../uploads",
-          wound.wound_cover
-        );
-        fs.unlink(oldFilePath, (err) => {
-          if (err) console.error("Error deleting old file:", err);
-        });
-      }
-
-      // Update with the new file path
+      const oldFilePath = path.join(__dirname, "../uploads", wound.wound_cover);
+      fs.unlink(oldFilePath, (err) => {
+        if (err) console.error("Error deleting old file:", err);
+      });
       const filePath = `wound_image/${req.file.filename}`;
       wound.wound_cover = filePath;
     }
 
     await woundRepository.save(wound);
-    res.status(200).json(wound);
+
+    // ค้นหา wound_type ที่เชื่อมโยงกับ wound_data ผ่าน wound_data_id
+    let woundType = await woundTypeRepository.findOne({
+      where: { wound: { id: wound.id } }, // ค้นหาผ่าน id ของ wound_data
+    });
+
+    // ถ้าพบข้อมูล wound_type ที่เชื่อมโยงกับ wound_data
+    if (woundType) {
+      // อัปเดต wound_type
+      woundType.wound_name_th = wound_name ?? woundType.wound_name_th;
+      woundType.wound_name_en = wound_name_en ?? woundType.wound_name_en;
+    } else {
+      // หากไม่มี wound_type ให้สร้างใหม่
+      woundType = woundTypeRepository.create({
+        wound_name_th: wound_name, // ใช้ wound_name เป็น wound_name_th (ภาษาไทย)
+        wound_name_en: wound_name_en, // ใช้ wound_name_en
+        wound: wound, // เชื่อมโยงกับ wound_data
+      });
+    }
+
+    // บันทึกข้อมูล wound_type
+    await woundTypeRepository.save(woundType);
+
+    res.status(200).json({ wound, woundType });
   } catch (error) {
     res.status(500).json({ message: "Error updating wound", error });
   }
 };
 
+
 // Function to delete a wound entry
 export const deleteWound = async (req: Request, res: Response) => {
+  const woundRepository = getRepository(Wound);
+
   try {
-    const woundRepository = getRepository(Wound);
     const wound = await woundRepository.findOne({
       where: { id: parseInt(req.params.id, 10) },
     });
@@ -160,7 +214,7 @@ export const deleteWound = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Wound not found" });
     }
 
-    // Delete the image file
+    // ลบไฟล์รูปภาพถ้ามี
     if (wound.wound_cover) {
       const filePath = path.join(__dirname, "../uploads", wound.wound_cover);
       fs.unlink(filePath, (err) => {
@@ -168,12 +222,19 @@ export const deleteWound = async (req: Request, res: Response) => {
       });
     }
 
+    // ลบข้อมูล wound_data (และ wound_type ด้วยการ cascade)
     await woundRepository.remove(wound);
-    res.status(200).json({ message: "Wound deleted successfully" });
+
+    res
+      .status(200)
+      .json({ message: "Wound and related data deleted successfully" });
   } catch (error) {
+    console.error("Error deleting wound:", error);
     res.status(500).json({ message: "Error deleting wound", error });
   }
 };
+
+
 
 export const getAdditionalData = async (req: Request, res: Response) => {
   try {
@@ -188,8 +249,17 @@ export const getAdditionalData = async (req: Request, res: Response) => {
     // สร้าง query โดยใช้ QueryBuilder เพื่อลดข้อมูลที่ดึงมาเฉพาะฟิลด์ที่ต้องการ
     const wounds = await woundRepository
       .createQueryBuilder("wound")
-      .select(["wound.id", "wound.wound_name", "wound.wound_cover"]) // เลือกเฉพาะฟิลด์ที่ต้องการ
-      .where("wound.wound_name IN (:...wound_types)", { wound_types }) // ใช้ IN clause กับ wound_types หลายค่า
+      .leftJoinAndSelect("wound.types", "woundType")
+      .select(["wound.id", "wound.wound_name", "wound.wound_cover"])
+      .where(
+        new Brackets((qb) => {
+          qb.where("woundType.wound_name_th IN (:...wound_types)", {
+            wound_types,
+          }).orWhere("woundType.wound_name_en IN (:...wound_types)", {
+            wound_types,
+          });
+        })
+      )
       .getMany();
 
     // ตรวจสอบว่าพบข้อมูลหรือไม่
@@ -208,4 +278,3 @@ export const getAdditionalData = async (req: Request, res: Response) => {
       .json({ message: "Error fetching additional data", error });
   }
 };
-
