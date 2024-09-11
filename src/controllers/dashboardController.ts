@@ -37,16 +37,23 @@ export const getDashboardData = async (
 };
 
 // ฟังก์ชันดึงบทความทั้งหมดพร้อมข้อมูลการคลิก
+// ฟังก์ชันดึงบทความทั้งหมดพร้อมข้อมูลการคลิกและวันที่
 export const getAllArticlesWithClicks = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   try {
-    // ดึงข้อมูลบทความทั้งหมดพร้อมจำนวนคลิก
+    // ดึงข้อมูลบทความทั้งหมดพร้อมจำนวนคลิกและวันที่
     const articles = await getRepository(Article)
       .createQueryBuilder("article")
       .leftJoinAndSelect("article.clicks", "click")
-      .select(["article.id", "article.article_name", "click.click_count"])
+      .select([
+        "article.id",
+        "article.article_name",
+        "article.created_at",  
+        "article.updated_at", 
+        "click.click_count",
+      ])
       .orderBy("click.click_count", "DESC")
       .getMany();
 
@@ -54,10 +61,12 @@ export const getAllArticlesWithClicks = async (
     const formattedArticles = articles.map((article) => ({
       id: article.id,
       article_name: article.article_name,
-      click_count: article.clicks[0]?.click_count || 0, // รวมเฉพาะ click_count ไม่ดึง clicks มาแสดง
+      created_at: article.created_at, 
+      updated_at: article.updated_at, 
+      click_count: article.clicks[0]?.click_count || 0, 
     }));
 
-    // ส่งข้อมูลบทความพร้อมกับ click_count กลับไปที่ client
+    // ส่งข้อมูลบทความพร้อมกับ click_count และวันที่กลับไปที่ client
     return res.status(200).json(formattedArticles);
   } catch (error) {
     console.error("Error fetching all articles with clicks:", error);
@@ -66,6 +75,7 @@ export const getAllArticlesWithClicks = async (
       .json({ message: "Failed to fetch articles with clicks" });
   }
 };
+
 
 export const getAllWoundsWithClicks = async (
   req: Request,
@@ -89,8 +99,8 @@ export const getAllWoundsWithClicks = async (
     const formattedWounds = wounds.map((wound) => ({
       id: wound.id,
       wound_name: wound.wound_name,
-      created_at: wound.created_at, // เพิ่ม created_at เพื่อใช้ใน chart
-      updated_at: wound.updated_at, // เพิ่ม updated_at เพื่อใช้ใน chart
+      created_at: wound.created_at, 
+      updated_at: wound.updated_at, 
       click_count: wound.clicks[0]?.click_count || 0,
     }));
 

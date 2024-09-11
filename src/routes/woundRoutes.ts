@@ -77,7 +77,7 @@ router.delete("/wounds/:id", authenticateToken, async (req, res, next) => {
   }
 });
 
-router.get("/wounds/type/:wound_type", getAdditionalData);
+router.post("/wounds/type", getAdditionalData);
 
 
 export default router;

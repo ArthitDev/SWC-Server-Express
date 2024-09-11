@@ -178,23 +178,25 @@ export const deleteWound = async (req: Request, res: Response) => {
 export const getAdditionalData = async (req: Request, res: Response) => {
   try {
     const woundRepository = getRepository(Wound);
-    const { wound_type } = req.params; // รับค่า wound_type ผ่าน dynamic path
+    const { wound_types } = req.body; // รับค่า wound_types จาก body ของ POST request
 
-    // แยก wound_type เป็น array โดยใช้เครื่องหมายคอมมา
-    const woundTypeArray = wound_type.split(",");
+    // ตรวจสอบว่ามีค่า wound_types หรือไม่
+    if (!wound_types || !Array.isArray(wound_types)) {
+      return res.status(400).json({ message: "Invalid wound_types provided." });
+    }
 
     // สร้าง query โดยใช้ QueryBuilder เพื่อลดข้อมูลที่ดึงมาเฉพาะฟิลด์ที่ต้องการ
     const wounds = await woundRepository
       .createQueryBuilder("wound")
       .select(["wound.id", "wound.wound_name", "wound.wound_cover"]) // เลือกเฉพาะฟิลด์ที่ต้องการ
-      .where("wound.wound_name IN (:...woundTypeArray)", { woundTypeArray }) // ใช้ IN clause กับ wound_type หลายค่า
+      .where("wound.wound_name IN (:...wound_types)", { wound_types }) // ใช้ IN clause กับ wound_types หลายค่า
       .getMany();
 
     // ตรวจสอบว่าพบข้อมูลหรือไม่
     if (wounds.length === 0) {
       return res
         .status(404)
-        .json({ message: `No additional data found for wound types.` });
+        .json({ message: "No additional data found for wound types." });
     }
 
     // ส่งข้อมูลกลับที่ถูกคัดกรองตามที่ต้องการ
@@ -206,5 +208,4 @@ export const getAdditionalData = async (req: Request, res: Response) => {
       .json({ message: "Error fetching additional data", error });
   }
 };
-
 
