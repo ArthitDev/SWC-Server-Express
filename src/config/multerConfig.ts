@@ -26,16 +26,17 @@ const getMulterStorage = (folder: string) => {
       cb(null, folder);
     },
     filename: (req, file, cb) => {
-      cb(null, `${Date.now()}_${file.originalname}`);
+      cb(null, `${Date.now()}_image`);
     },
   });
 };
+
 
 // กำหนดตัวเลือกของ multer พร้อมการตั้งค่าขนาดไฟล์สูงสุดและการกรองประเภทไฟล์
 const multerOptions = (folder: string) => {
   return {
     storage: getMulterStorage(folder),
-    limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10 MB
+    limits: { fileSize: 15 * 1024 * 1024 }, // Limit file size to 15 MB
     fileFilter: (
       req: Express.Request,
       file: Express.Multer.File,

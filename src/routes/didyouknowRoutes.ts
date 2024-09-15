@@ -14,6 +14,6 @@ router.post("/didyouknows", authenticateToken ,createDidyouknow);
 router.get("/didyouknows", getAllDidyouknow);
 router.get("/didyouknows/:id", getDidyouknowById);
 router.put("/didyouknows/:id", authenticateToken,updateDidyouknow);
-router.delete("/didyouknows/:id", authenticateToken ,deleteDidyouknow);
+router.delete("/didyouknows/:id", authenticateToken, deleteDidyouknow);
 
 export default router;

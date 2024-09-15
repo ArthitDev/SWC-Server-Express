@@ -77,11 +77,23 @@ export const getAllWounds = async (req: Request, res: Response) => {
 
     // ตรวจสอบว่ามีพารามิเตอร์ search หรือไม่
     if (search) {
-      query.where(
-        "wound.wound_name LIKE :search OR wound.wound_content LIKE :search OR wound.wound_note LIKE :search",
-        { search: `%${search}%` }
-      );
+      query
+        .where(
+          "wound.wound_name LIKE :search OR wound.wound_content LIKE :search",
+          { search: `%${search}%` }
+        )
+        .addSelect(
+          `CASE
+        WHEN wound.wound_name LIKE :search THEN 1
+        ELSE 2
+       END`,
+          "priority"
+        )
+        .orderBy("priority", "ASC") // จัดลำดับให้ wound_name มาเป็นลำดับแรก
+        .addOrderBy("wound.wound_name", "ASC") // จัดเรียงเพิ่มเติมตามชื่อถ้าพบ
+        .addOrderBy("wound.wound_content", "ASC"); // จากนั้นค่อยเรียงตามเนื้อหา
     }
+
 
     // ดึงข้อมูลจากฐานข้อมูล
     const [wounds, total] = await query.getManyAndCount();
