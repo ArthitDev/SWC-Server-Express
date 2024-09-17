@@ -31,5 +31,5 @@ export class Admin {
   updated_at: Date;
 
   @Column({ type: "tinyint", default: 0 })
-  is_deleted: boolean;
+  is_deleted: number;
 }

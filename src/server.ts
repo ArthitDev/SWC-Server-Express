@@ -30,6 +30,7 @@ import articleClickRoutes from "./routes/articleClickRoutes";
 import woundClickRoutes from "./routes/woundClickRoutes";
 import articleTopRoutes from "./routes/articleTopRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
+import profileSettingRoutes from "./routes/profileSettingRoutes";
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: ".env.prod" });
@@ -58,7 +59,7 @@ connect();
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:3900",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE" ,"PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -113,6 +114,7 @@ app.use("/api", refreshTokenRoutes);
 app.use("/api", adminProtectedRoutes);
 app.use("/api", logoutRoutes);
 app.use("/api", profileRoutes);
+app.use("/api", profileSettingRoutes);
 app.use("/api", passwordResetRouter);
 
 // CRUD

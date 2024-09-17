@@ -17,12 +17,16 @@ export const loginAdmin = async (req: Request, res: Response) => {
 
   try {
     const adminRepository = getRepository(Admin);
-    const admin = await adminRepository.findOne({ where: { username } });
+    const admin = await adminRepository.findOne({
+      where: { username, is_deleted: 0 },
+    });
 
     if (!admin) {
       return res
         .status(401)
-        .json({ message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" });
+        .json({
+          message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกลบแล้ว",
+        });
     }
 
     const match = await bcrypt.compare(password, admin.password);
@@ -75,3 +79,4 @@ export const loginAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ" });
   }
 };
+

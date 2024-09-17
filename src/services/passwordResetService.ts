@@ -14,10 +14,10 @@ export class PasswordResetService {
     const passwordResetRepository = getRepository(PasswordReset);
 
     const admin = await adminRepository.findOne({
-      where: { email: adminEmail },
+      where: { email: adminEmail, is_deleted: 0 }, // เพิ่มเงื่อนไข is_deleted = 0
     });
     if (!admin) {
-      throw new Error("Admin not found");
+      throw new Error("ไม่พบบัญชี บัญชีอาจถูกปิดใช้งาน");
     }
 
     const token = uuidv4();
@@ -52,7 +52,7 @@ export class PasswordResetService {
       You requested a password reset. Please use the following link to reset your password.
     </div>
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-      <h2>Password Reset Request</h2>
+      <h2>Password Reset Request For : ${admin.username}</h2>
       <p>You requested a password reset. Please click the link below to reset your password:</p>
       <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;">Reset Password</a>
       <p>This link will expire in 1 hour.</p>
@@ -71,14 +71,20 @@ export class PasswordResetService {
 
     const passwordReset = await passwordResetRepository.findOne({
       where: { token },
-      relations: ["admin"], // Ensure that the admin relation is loaded
+      relations: ["admin"], 
     });
 
     if (!passwordReset || passwordReset.expires_at < new Date()) {
-      throw new Error("Token is invalid or has expired");
+      throw new Error("Token หมดอายุ กรุณาส่งอีเมลใหม่อีกครั้ง");
     }
 
     const admin = passwordReset.admin;
+
+    // เพิ่มเงื่อนไข is_deleted = 0
+    if (admin.is_deleted !== 0) {
+      throw new Error("บัญชีถูกลบแล้ว");
+    }
+
     admin.password = await bcrypt.hash(newPassword, 10);
 
     await adminRepository.save(admin);

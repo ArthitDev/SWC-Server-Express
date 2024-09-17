@@ -107,7 +107,7 @@ export const getAllWounds = async (req: Request, res: Response) => {
       data: wounds.map((wound) => ({
         id: wound.id,
         wound_name: wound.wound_name,
-        wound_name_en: wound.types[0]?.wound_name_en || "", // ดึง wound_name_en จาก wound_type
+        wound_name_en: wound.types[0]?.wound_name_en || "",
         wound_content: wound.wound_content,
         wound_note: wound.wound_note,
         wound_cover: wound.wound_cover,

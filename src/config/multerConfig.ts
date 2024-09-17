@@ -14,10 +14,12 @@ const createDirectoryIfNotExists = (directory: string) => {
 const baseUploadDir = path.join(__dirname, "../uploads");
 const woundImageDir = path.join(baseUploadDir, "wound_image");
 const articleImageDir = path.join(baseUploadDir, "article_image");
+const profileImageDir = path.join(baseUploadDir, "profile_image");
 
 // สร้างโฟลเดอร์หากยังไม่มี
 createDirectoryIfNotExists(woundImageDir);
 createDirectoryIfNotExists(articleImageDir);
+createDirectoryIfNotExists(profileImageDir);
 
 // ฟังก์ชันกำหนดการตั้งค่า multer ตามประเภทของภาพ
 const getMulterStorage = (folder: string) => {
@@ -59,3 +61,4 @@ const multerOptions = (folder: string) => {
 
 export const woundImageUpload = multer(multerOptions(woundImageDir));
 export const articleImageUpload = multer(multerOptions(articleImageDir));
+export const profileImageUpload = multer(multerOptions(profileImageDir));
