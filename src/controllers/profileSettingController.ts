@@ -1,8 +1,10 @@
 import { CustomRequest } from "../middlewares/authMiddleware";
-import { Response } from "express";
 import { getRepository } from "typeorm";
 import { Admin } from "../entities/Admin";
 import bcrypt from "bcrypt";
+import path from "path";
+import fs from "fs";
+import { Request, Response } from "express";
 
 const SALT_ROUNDS = 10;
 
@@ -40,17 +42,18 @@ export const getProfile = async (req: CustomRequest, res: Response) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      profileImage: user.profile_image, 
     });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
+
 // ฟังก์ชันสำหรับการเปลี่ยนรหัสผ่าน
 export const changePassword = async (req: CustomRequest, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "User not authenticated" });
+    return res.status(401).json({ message: "แอดมินยังไม่ได้เข้าสู่ระบบ" });
   }
 
   const userId = req.user.id;
@@ -59,12 +62,12 @@ export const changePassword = async (req: CustomRequest, res: Response) => {
   try {
     const user = await findUserById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "ไม่พบบัญชีแอดมินนี้" });
     }
 
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
     if (!passwordMatch) {
-      return res.status(400).json({ message: "Current password is incorrect" });
+      return res.status(400).json({ message: "รหัสผ่านปัจจุบันไม่ถูกต้อง" });
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
@@ -73,57 +76,66 @@ export const changePassword = async (req: CustomRequest, res: Response) => {
     const adminRepository = getRepository(Admin);
     await adminRepository.save(user);
 
-    res.json({ message: "Password updated successfully" });
+    res.json({ message: "เปลี่ยนรหัสผ่านสำเร็จแล้ว !" });
   } catch (error) {
     console.error("Error changing password:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// ฟังก์ชันสำหรับการอัพเดตโปรไฟล์
-export const updateProfile = async (req: CustomRequest, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "User not authenticated" });
-  }
-
-  const userId = req.user.id;
-  const { username, email, currentPassword, newPassword } = req.body;
+// ฟังก์ชันอัปเดตข้อมูลโปรไฟล์พร้อมรูปภาพ
+export const updateProfileWithImage = async (req: Request, res: Response) => {
+  const adminRepository = getRepository(Admin);
 
   try {
-    const user = await findUserById(userId);
+    const user = await adminRepository.findOne({
+      where: { id: parseInt(req.params.id, 10) },
+    });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "ไม่พบบัญชีแอดมินนี้" });
     }
 
-    // อัพเดตชื่อผู้ใช้และอีเมล (ถ้าผู้ใช้ส่งข้อมูลมา)
-    if (username) user.username = username;
-    if (email) user.email = email;
+    const { username, email } = req.body;
 
-    // ตรวจสอบรหัสผ่านปัจจุบันและอัพเดตรหัสผ่านใหม่ (ถ้าผู้ใช้ส่งข้อมูลมา)
-    if (currentPassword && newPassword) {
-      const passwordMatch = await bcrypt.compare(
-        currentPassword,
-        user.password
-      );
-      if (!passwordMatch) {
-        return res
-          .status(400)
-          .json({ message: "Current password is incorrect" });
+    // อัปเดตข้อมูลผู้ใช้
+    user.username = username ?? user.username;
+    user.email = email ?? user.email;
+
+    // ตรวจสอบว่ามีการอัปโหลดรูปโปรไฟล์ใหม่หรือไม่
+    if (req.file) {
+      // ตรวจสอบว่ามีรูปโปรไฟล์เก่าอยู่ก่อนที่จะพยายามลบ
+      if (user.profile_image) {
+        const oldFilePath = path.join(
+          __dirname,
+          "../uploads/profile_image",
+          user.profile_image
+        );
+
+        // ลบรูปโปรไฟล์เก่า
+        fs.unlink(oldFilePath, (err) => {
+          if (err) console.error("Error deleting old profile image:", err);
+        });
       }
 
-      const hashedNewPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
-      user.password = hashedNewPassword;
+      // บันทึกเส้นทางรูปภาพใหม่
+      const newProfileImagePath = `profile_image/${req.file.filename}`;
+      user.profile_image = newProfileImagePath;
     }
 
-    const adminRepository = getRepository(Admin);
+    // บันทึกข้อมูลที่อัปเดตลงในฐานข้อมูล
     await adminRepository.save(user);
 
-    res.json({ message: "Profile updated successfully" });
+    res.status(200).json({
+      message: "แก้ไขข้อมูลสำหรับบัญชีแอดมินเรียบร้อยแล้ว",
+      user,
+    });
   } catch (error) {
     console.error("Error updating profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Error updating profile", error });
   }
 };
+
 
 // ฟังก์ชันสำหรับการปิดใช้งานบัญชี
 export const deactivateAccount = async (req: CustomRequest, res: Response) => {
@@ -150,10 +162,9 @@ export const deactivateAccount = async (req: CustomRequest, res: Response) => {
     res.clearCookie("refreshToken", { path: "/" });
 
     // ส่งผลลัพธ์เมื่อปิดบัญชีสำเร็จ
-    res.json({ message: "Account deactivated successfully" });
+    res.json({ message: "ลบบัญชีสำเร็จ" });
   } catch (error) {
     console.error("Error deactivating account:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-

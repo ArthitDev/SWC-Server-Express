@@ -3,9 +3,10 @@ import { authenticateToken } from "../middlewares/authMiddleware";
 import {
   getProfile,
   changePassword,
-  updateProfile,
+  updateProfileWithImage,
   deactivateAccount,
 } from "../controllers/profileSettingController";
+import { uploadProfileImage } from "../middlewares/uploadMiddleware";
 
 const router = express.Router();
 
@@ -16,9 +17,17 @@ router.get("/profile-setting", authenticateToken, getProfile);
 router.post("/change-password", authenticateToken, changePassword);
 
 // Route สำหรับการอัพเดตโปรไฟล์
-router.patch("/update-profile", authenticateToken, updateProfile);
+router.patch(
+  "/profile-setting/:id",
+  authenticateToken,
+  uploadProfileImage,
+  updateProfileWithImage
+);
+
+
 
 // Route สำหรับการปิดใช้งานบัญชี
 router.patch("/delete-account", authenticateToken, deactivateAccount);
+
 
 export default router;
