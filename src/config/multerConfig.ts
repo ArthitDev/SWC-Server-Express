@@ -28,7 +28,8 @@ const getMulterStorage = (folder: string) => {
       cb(null, folder);
     },
     filename: (req, file, cb) => {
-      cb(null, `${Date.now()}_image`);
+      const fileExtension = file.mimetype.split("/")[1]; 
+      cb(null, `${Date.now()}_image.${fileExtension}`); 
     },
   });
 };
