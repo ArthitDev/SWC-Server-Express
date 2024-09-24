@@ -31,6 +31,7 @@ import woundClickRoutes from "./routes/woundClickRoutes";
 import articleTopRoutes from "./routes/articleTopRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import profileSettingRoutes from "./routes/profileSettingRoutes";
+import contactRoutes from "./routes/contactRoutes";
 
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: ".env.prod" });
@@ -171,6 +172,8 @@ app.use("/api", articleTopRoutes);
 
 //Dashbord Data
 app.use("/api", dashboardRoutes);
+
+app.use("/api" ,contactRoutes);
 
 
 // middleware สำหรับจัดการข้อผิดพลาดกลาง
