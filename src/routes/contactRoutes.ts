@@ -4,8 +4,10 @@ import {
   getAllContacts,
   getUnreadContacts,
   updateIsRead,
+  deleteContact,
 } from "../controllers/contactController";
 import WebSocket from "ws";
+import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = Router();
 
@@ -28,7 +30,6 @@ router.post("/contact", async (req, res, next) => {
       JSON.stringify({ eventType: "UPDATE_CONTACTS", data: "New Contact added" })
     );
   } catch (error) {
-    console.error("Error creating contact:", error);
     next(error);
   }
 });
@@ -38,7 +39,7 @@ router.get("/contact/unread", getUnreadContacts);
 
 router.get("/contact", getAllContacts);
 
-router.put("/contact/:id", async (req, res, next) => {
+router.put("/contact/:id", authenticateToken, async (req, res, next) => {
   try {
     const wss = req.app.get("wss") as WebSocket.Server;
     await updateIsRead(req, res);
@@ -50,9 +51,26 @@ router.put("/contact/:id", async (req, res, next) => {
       })
     );
   } catch (error) {
-    console.error("Error Update contact:", error);
     next(error);
   }
 });
+
+// เส้นทางสำหรับลบ Contact
+router.delete("/contact/:id", authenticateToken,async (req, res, next) => {
+  try {
+    const wss = req.app.get("wss") as WebSocket.Server;
+    await deleteContact(req, res);
+    sendWebSocketMessage(
+      wss,
+      JSON.stringify({
+        eventType: "DELETE_CONTACT",
+        data: `Contact with id ${req.params.id} deleted`,
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 export default router;

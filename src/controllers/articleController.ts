@@ -56,9 +56,14 @@ export const getAllArticles = async (req: Request, res: Response) => {
     // คำนวณค่า offset
     const offset = (page - 1) * limit;
 
-    // ใช้ QueryBuilder เพื่อสร้างคำสั่งค้นหา
+    // ใช้ QueryBuilder เพื่อสร้างคำสั่งค้นหา และเลือกเฉพาะ click_count
     let queryBuilder = articleRepository
       .createQueryBuilder("article")
+      .leftJoinAndSelect(
+        "article.clicks",
+        "article_clicks",
+        "article_clicks.click_count"
+      )
       .skip(offset)
       .take(limit);
 
@@ -80,12 +85,19 @@ export const getAllArticles = async (req: Request, res: Response) => {
     // นับจำนวนทั้งหมดของรายการที่ค้นหาได้
     const [articles, total] = await queryBuilder.getManyAndCount();
 
+    // ตรวจสอบว่ามีบทความหรือไม่
     if (articles.length === 0) {
       return res.status(200).json({ message: "No Articles found" });
     }
 
+    // ส่งข้อมูลกลับไปที่ frontend
     res.status(200).json({
-      data: articles,
+      data: articles.map((article) => ({
+        ...article,
+        clicks: article.clicks.map((click) => ({
+          click_count: click.click_count,
+        })),
+      })),
       totalItems: total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
@@ -94,6 +106,7 @@ export const getAllArticles = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching articles", error });
   }
 };
+
 
 
 // ฟังก์ชันสำหรับอ่านข้อมูลบทความเฉพาะเจาะจงโดยใช้ ID

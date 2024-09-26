@@ -68,10 +68,11 @@ export const getAllWounds = async (req: Request, res: Response) => {
     // คำนวณค่า offset
     const offset = (page - 1) * limit;
 
-    // สร้าง query สำหรับค้นหาข้อมูลจาก wound_data และ wound_type
+    // สร้าง query สำหรับค้นหาข้อมูลจาก wound_data, wound_type และ wound_clicks
     const query = woundRepository
       .createQueryBuilder("wound")
       .leftJoinAndSelect("wound.types", "woundTypes") // JOIN กับตาราง wound_type
+      .leftJoinAndSelect("wound.clicks", "woundClicks") // JOIN กับตาราง wound_clicks
       .skip(offset)
       .take(limit);
 
@@ -94,7 +95,6 @@ export const getAllWounds = async (req: Request, res: Response) => {
         .addOrderBy("wound.wound_content", "ASC"); // จากนั้นค่อยเรียงตามเนื้อหา
     }
 
-
     // ดึงข้อมูลจากฐานข้อมูล
     const [wounds, total] = await query.getManyAndCount();
 
@@ -102,7 +102,7 @@ export const getAllWounds = async (req: Request, res: Response) => {
       return res.status(200).json({ message: "No wounds found" });
     }
 
-    // ส่งข้อมูล wound พร้อมข้อมูลจาก wound_type กลับไป
+    // ส่งข้อมูล wound พร้อมข้อมูลจาก wound_type และ wound_clicks กลับไป
     res.status(200).json({
       data: wounds.map((wound) => ({
         id: wound.id,
@@ -111,6 +111,7 @@ export const getAllWounds = async (req: Request, res: Response) => {
         wound_content: wound.wound_content,
         wound_note: wound.wound_note,
         wound_cover: wound.wound_cover,
+        click_counts: wound.clicks.map((click) => click.click_count),
         created_at: wound.created_at,
         updated_at: wound.updated_at,
         ref: wound.ref,
@@ -124,6 +125,8 @@ export const getAllWounds = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching wounds", error });
   }
 };
+
+
 
 
 
@@ -288,5 +291,58 @@ export const getAdditionalData = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ message: "Error fetching additional data", error });
+  }
+};
+
+
+//สำหรับหลายรูป 
+export const createWounds = async (req: Request, res: Response) => {
+  const woundRepository = getRepository(Wound);
+  const woundTypeRepository = getRepository(WoundTypes);
+
+  try {
+    const {
+      wound_name, // ใช้ wound_name สำหรับ wound_name_th
+      wound_content,
+      wound_note,
+      wound_name_en, // รับค่า wound_name_en จากฟอร์ม
+      ref,
+    } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    // จัดการการบันทึกหลายรูปภาพ
+    const imagePaths = (req.files as Express.Multer.File[]).map(
+      (file) => `wound_image/${file.filename}`
+    );
+
+    const refObject = ref ? JSON.parse(ref) : null;
+
+    // สร้างรายการใหม่ใน wound_data
+    const newWound = woundRepository.create({
+      wound_name,
+      wound_cover: imagePaths.join(","), // บันทึกหลายไฟล์เป็น string แยกด้วย comma
+      wound_content,
+      wound_note,
+      ref: refObject,
+    } as Wound);
+
+    const savedWound = await woundRepository.save(newWound);
+
+    // สร้างรายการใหม่ใน wound_type โดยใช้ wound_name_th และ wound_name_en
+    const newWoundType = woundTypeRepository.create({
+      wound_name_th: wound_name, // ตั้งค่า wound_name_th ให้เท่ากับ wound_name
+      wound_name_en, // ใช้ wound_name_en จากฟอร์ม
+      wound: savedWound, // เชื่อมโยงกับข้อมูลใน wound_data
+    } as WoundTypes);
+
+    await woundTypeRepository.save(newWoundType);
+
+    res.status(201).json({ wound: savedWound, woundType: newWoundType });
+  } catch (error) {
+    console.error("Error creating wound:", error);
+    res.status(500).json({ message: "Error creating wound", error });
   }
 };

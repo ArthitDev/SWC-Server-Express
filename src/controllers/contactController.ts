@@ -135,3 +135,29 @@ export const updateIsRead = async (req: Request, res: Response) => {
   }
 };
 
+// ฟังก์ชันสำหรับลบ Contact ตาม id
+export const deleteContact = async (req: Request, res: Response) => {
+  const contactRepository = getRepository(Contact);
+
+  try {
+    // ดึง id ของ contact จาก request parameters
+    const { id } = req.params;
+
+    // ค้นหา contact ที่ตรงกับ id
+    const contact = await contactRepository.findOne({ where: { id: parseInt(id) } });
+
+    // ตรวจสอบว่าพบ contact หรือไม่
+    if (!contact) {
+      return res.status(404).json({ message: "Contact not found" });
+    }
+
+    // ลบ contact จากฐานข้อมูล
+    await contactRepository.remove(contact);
+
+    // ส่งการตอบกลับเมื่อการลบสำเร็จ
+    res.status(200).json({ message: "Contact deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting contact:", error);
+    res.status(500).json({ message: "Error deleting contact", error });
+  }
+};

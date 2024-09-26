@@ -6,6 +6,7 @@ import {
   profileImageUpload,
 } from "../config/multerConfig";
 
+
 // Middleware สำหรับอัปโหลดรูปภาพ wound
 export const uploadWoundImage = (
   req: Request,
@@ -14,6 +15,21 @@ export const uploadWoundImage = (
 ) => {
   const upload = woundImageUpload.single("image");
 
+  upload(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ message: `Multer error: ${err.message}` });
+    }
+    next();
+  });
+};
+
+// Middleware สำหรับอัปโหลดรูปภาพ wound (รองรับหลายภาพ)
+export const uploadWoundImages = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const upload = woundImageUpload.array("images", 6); 
   upload(req, res, (err) => {
     if (err) {
       return res.status(400).json({ message: `Multer error: ${err.message}` });
