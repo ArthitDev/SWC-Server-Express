@@ -10,6 +10,9 @@ export class ArticleTopController {
         .createQueryBuilder("article")
         .leftJoinAndSelect("article.clicks", "click")
         .select(["article.id", "article.article_name", "click.click_count"])
+        .where("article.article_name != :excludedName", {
+          excludedName: "ทำความรู้จักแผล",
+        })
         .orderBy("click.click_count", "DESC")
         .limit(5)
         .getMany();

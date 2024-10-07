@@ -26,9 +26,18 @@ export class Contact {
   @Column({ name: "is_read", type: "tinyint", default: false })
   isRead: number;
 
-  @CreateDateColumn({ name: "created_at" })
+  @CreateDateColumn({
+    name: "created_at",
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
+  })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: "updated_at" })
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP",
+    onUpdate: "CURRENT_TIMESTAMP",
+  })
   updatedAt: Date;
 }

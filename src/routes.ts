@@ -3,16 +3,18 @@ import { Request, Response } from "express";
 export const getMainInfo = (req: Request, res: Response) => {
   res.json({
     message: "SWC API Gateway!",
-    note: "โปรดดูเอกสารประกอบเกี่ยวกับวิธีการใช้ API เหล่านี้.",
+    note: "โปรดดูเอกสารประกอบหรือติดต่อผู้พัฒนาเกี่ยวกับวิธีการใช้ API เหล่านี้.",
     main_endpoints: {
-      "/api/register": "ลงทะเบียนผู้ดูแลระบบใหม่",
-      "/api/login": "เข้าสู่ระบบสำหรับผู้ดูแลระบบที่มีอยู่แล้ว",
-      "/api/logout": "ใช้สำหรับ logout ออกจากระบบโดยลบ cookie จาก back-end",
-      "/api/request-password-reset": "ขอลิงก์รีเซ็ตรหัสผ่าน",
-      "/api/reset-password": "รีเซ็ตรหัสผ่านโดยใช้โทเค็น",
-      "/api/refresh-token": "ขอ accessToken ใหม่ โดยใช้ refreshToken",
-      "/api/admin": "Route ที่มีการป้องกันโดยใช้ Middleware",
-      "/api/profile": "ใช้ดึงข้อมูล Admin ที่เข้าสู่ระบบ",
+      "POST : /api/register": "ลงทะเบียนผู้ดูแลระบบใหม่",
+      "POST : /api/login": "เข้าสู่ระบบสำหรับผู้ดูแลระบบที่มีอยู่แล้ว",
+      "POST : /api/logout": "ใช้สำหรับ logout ออกจากระบบโดยลบ cookie ผ่าน server",
+      "POST : /api/request-password-reset": "ขอลิงก์รีเซ็ตรหัสผ่านด้วยอีเมล",
+      "POST : /api/reset-password": "รีเซ็ตรหัสผ่านโดยใช้โทเค็น",
+      "POST : /api/refresh-token": "ขอ accessToken ใหม่ โดยใช้ refreshToken",
+      "GET : /api/admin": "Route ที่มีการป้องกันโดยใช้ Middleware",
+      "GET : /api/profile": "ใช้ดึงข้อมูล Admin ที่เข้าสู่ระบบ",
+      "PUT : /api/profile-setting": "ใช้แก้ไขข้อมูล Admin ที่เข้าสู่ระบบ",
+      "POST : /api/protected": "ใช้สำหรับการตรวจสอบความถูกต้องของค่าที่ส่งมา",
     },
     crud_wound_endpoint: {
       "GET : /api/wounds": "ดึงข้อมูลแผลทั้งหมด",
@@ -42,8 +44,31 @@ export const getMainInfo = (req: Request, res: Response) => {
       "PUT : /api/didyouknow/:id": "แก้ไขหรืออัพเดทข้อมูลรู้หรือไม่",
       "DELETE : /api/didyouknow/:id": "ลบข้อมูลเคล็ดไม่ลับ",
     },
+    save_click_data_endpoint: {
+      "POST: /api/articles/:articleId/click": "บันทึกข้อมูลการอ่านบทความ",
+      "POST: /api/wounds/:woundId/click": "บันทึกข้อมูลการอ่านแผล",
+    },
+    statistics_endpoint: {
+      "GET: /api/top-articles": "ดึงข้อมูลการอ่านบทความสูงสุด 5 อันดับ",
+    },
+    contact_endpoint: {
+      "POST: /api/contact": "ส่งข้อมูลติดต่อ",
+      "GET: /api/contact": "ดึงข้อมูลติดต่อทั้งหมด",
+      "GET: /api/contact/:id": "ดึงข้อมูลติดต่อตาม ID",
+      "PUT: /api/contact/:id": "แก้ไขหรืออัพเดทข้อมูลติดต่อ",
+      "DELETE: /api/contact/:id": "ลบข้อมูลติดต่อ",
+    },
+    dashboard_data_endpoint: {
+      "GET: /api/dashboard": "ดึงขจำนวนข้อมูลทั้งหมด",
+      "GET: /api/dashboard/article-click": "ดึงข้อมูลการอ่านบทความ",
+      "GET: /api/dashboard/wound-click": "ดึงข้อมูลการอ่านแผล",
+    },
+    image_data_endpoint: {
+      "GET: /api/uploads": "ดึงข้อมูลรูปภาพจาก Server ตาม Path ที่เก็บไว้ใน DB",
+    },
     ai_predict_endpoint: {
-      "api/ai": "ยังไม่มี",
+      "POST: ai.smartwoundcare.site/predict": "ส่งรูปวิเคราะห์ไปที่ AI Server",
+      "POST: /api/wounds/type": "ดึงข้อมูลประเภทแผลเทียบกับ AI สำหรับข้อมูลแผลเพิ่มเติม",
     },
   });
 };

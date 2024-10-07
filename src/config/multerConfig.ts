@@ -12,14 +12,16 @@ const createDirectoryIfNotExists = (directory: string) => {
 
 // กำหนดโฟลเดอร์สำหรับเก็บรูปภาพแต่ละประเภท
 const baseUploadDir = path.join(__dirname, "../uploads");
-const woundImageDir = path.join(baseUploadDir, "wound_image");
+export const woundImageDir = path.join(baseUploadDir, "wound_image"); // ทำการ export
 const articleImageDir = path.join(baseUploadDir, "article_image");
 const profileImageDir = path.join(baseUploadDir, "profile_image");
+const userWoundImageDir = path.join(baseUploadDir, "user_wound_image"); 
 
 // สร้างโฟลเดอร์หากยังไม่มี
 createDirectoryIfNotExists(woundImageDir);
 createDirectoryIfNotExists(articleImageDir);
 createDirectoryIfNotExists(profileImageDir);
+createDirectoryIfNotExists(userWoundImageDir);
 
 // ฟังก์ชันกำหนดการตั้งค่า multer ตามประเภทของภาพ
 const getMulterStorage = (folder: string) => {
@@ -28,12 +30,11 @@ const getMulterStorage = (folder: string) => {
       cb(null, folder);
     },
     filename: (req, file, cb) => {
-      const fileExtension = file.mimetype.split("/")[1]; 
-      cb(null, `${Date.now()}_image.${fileExtension}`); 
+      const fileExtension = file.mimetype.split("/")[1];
+      cb(null, `${Date.now()}_image.${fileExtension}`);
     },
   });
 };
-
 
 // กำหนดตัวเลือกของ multer พร้อมการตั้งค่าขนาดไฟล์สูงสุดและการกรองประเภทไฟล์
 const multerOptions = (folder: string) => {
@@ -63,3 +64,4 @@ const multerOptions = (folder: string) => {
 export const woundImageUpload = multer(multerOptions(woundImageDir));
 export const articleImageUpload = multer(multerOptions(articleImageDir));
 export const profileImageUpload = multer(multerOptions(profileImageDir));
+export const userWoundImageUpload = multer(multerOptions(userWoundImageDir));

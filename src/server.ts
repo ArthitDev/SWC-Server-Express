@@ -32,17 +32,18 @@ import articleTopRoutes from "./routes/articleTopRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import profileSettingRoutes from "./routes/profileSettingRoutes";
 import contactRoutes from "./routes/contactRoutes";
+import userWoundUploadRoutes from "./routes/userWoundUploadRoutes";
 
 if (process.env.NODE_ENV === "production") {
-  dotenv.config({ path: ".env.prod" });
+  dotenv.config({ path: ".env.production" });
   console.log("Environment: Production");
 } else {
-  dotenv.config({ path: ".env.local" });
+  dotenv.config({ path: ".env.development" });
   console.log("Environment: Development");
 }
 
 const app = express();
-const port = process.env.PORT || 3306;
+const port = process.env.PORT || 3300;
 const host = process.env.HOST || "localhost";
 
 
@@ -56,11 +57,18 @@ const wss = new WebSocket.Server({ server });
 // เชื่อมต่อฐานข้อมูล
 connect();
 
+//ใช้งาน JSON
+app.use(express.json());
+
+
 // ตั้งค่า middleware
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3900",
-    methods: ["GET", "POST", "PUT", "DELETE" ,"PATCH"],
+    origin: [
+      process.env.CORS_ORIGIN || "http://localhost:3900",
+      "https://www.youtube.com",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -75,7 +83,11 @@ app.use(
         "img-src": ["'self'", "data:", "https:", "http:"],
         "script-src": ["'self'", "'unsafe-inline'", "https:", "http:"],
         "style-src": ["'self'", "'unsafe-inline'", "https:", "http:"],
-        "connect-src": ["'self'", "http://localhost:3000"],
+        "connect-src": [
+          "'self'",
+          "http://localhost:3000",
+          "https://api.smartwoundcare.site",
+        ],
         "frame-ancestors": ["'self'"],
       },
     },
@@ -173,7 +185,9 @@ app.use("/api", articleTopRoutes);
 //Dashbord Data
 app.use("/api", dashboardRoutes);
 
-app.use("/api" ,contactRoutes);
+app.use("/api", contactRoutes);
+
+app.use("/api" ,userWoundUploadRoutes)
 
 
 // middleware สำหรับจัดการข้อผิดพลาดกลาง

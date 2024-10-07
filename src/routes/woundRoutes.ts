@@ -1,17 +1,16 @@
 import { Router } from "express";
 import {
-  createWound,
   createWounds,
   getAllWounds,
   getWoundById,
   updateWound,
   deleteWound,
   getAdditionalData,
+  getOnlyWounds,
 } from "../controllers/woundController";
 import { authenticateToken } from "../middlewares/authMiddleware";
 import {
   uploadWoundImage,
-  uploadWoundImages,
 } from "../middlewares/uploadMiddleware";
 import WebSocket from "ws"; 
 
@@ -33,25 +32,6 @@ router.post(
   async (req, res, next) => {
     try {
       const wss = req.app.get("wss") as WebSocket.Server;
-      await createWound(req, res);
-      sendWebSocketMessage(
-        wss,
-        JSON.stringify({ eventType: "UPDATE_WOUNDS", data: "New wound added" })
-      );
-    } catch (error) {
-      console.error("Error creating wound:", error);
-      next(error);
-    }
-  }
-);
-
-router.post(
-  "/wounds/multi",
-  authenticateToken,
-  uploadWoundImages,
-  async (req, res, next) => {
-    try {
-      const wss = req.app.get("wss") as WebSocket.Server;
       await createWounds(req, res);
       sendWebSocketMessage(
         wss,
@@ -64,7 +44,9 @@ router.post(
   }
 );
 
+
 router.get("/wounds", getAllWounds);
+router.get("/woundsname",getOnlyWounds)
 router.get("/wounds/:id", getWoundById);
 
 router.put(

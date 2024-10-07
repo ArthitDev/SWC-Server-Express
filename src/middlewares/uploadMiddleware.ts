@@ -13,7 +13,7 @@ export const uploadWoundImage = (
   res: Response,
   next: NextFunction
 ) => {
-  const upload = woundImageUpload.single("image");
+  const upload = woundImageUpload.array("images", 6);
 
   upload(req, res, (err) => {
     if (err) {
@@ -23,20 +23,7 @@ export const uploadWoundImage = (
   });
 };
 
-// Middleware สำหรับอัปโหลดรูปภาพ wound (รองรับหลายภาพ)
-export const uploadWoundImages = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const upload = woundImageUpload.array("images", 6); 
-  upload(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ message: `Multer error: ${err.message}` });
-    }
-    next();
-  });
-};
+
 
 // Middleware สำหรับอัปโหลดรูปภาพ article
 export const uploadArticleImage = (

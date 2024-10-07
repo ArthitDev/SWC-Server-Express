@@ -5,6 +5,7 @@ import {
   getArticleById,
   updateArticle,
   deleteArticle,
+  getOnlyArticles,
 } from "../controllers/articleController";
 import { authenticateToken } from "../middlewares/authMiddleware";
 import { uploadArticleImage } from "../middlewares/uploadMiddleware";
@@ -40,6 +41,7 @@ router.post(
 );
 router.get("/articles", getAllArticles);
 router.get("/articles/:id", getArticleById);
+router.get("/articlesname", getOnlyArticles);
 router.put(
   "/articles/:id",
   uploadArticleImage,

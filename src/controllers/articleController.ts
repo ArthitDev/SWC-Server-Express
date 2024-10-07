@@ -10,7 +10,7 @@ export const createArticle = async (req: Request, res: Response) => {
   const articleRepository = getRepository(Article);
 
   try {
-    const { article_name, article_content, article_note, ref, category } =
+    const { article_name, article_content, article_note, ref, article_video, category } =
       req.body;
 
     if (!req.file) {
@@ -22,6 +22,7 @@ export const createArticle = async (req: Request, res: Response) => {
 
     // ตรวจสอบว่า ref เป็น JSON object หรือไม่
     const refObject = ref ? JSON.parse(ref) : null;
+    const woundVideoObject = article_video? JSON.parse(article_video) : null;
 
     // สร้างข้อมูลบทความและบันทึกลงฐานข้อมูล
     const newArticle = articleRepository.create({
@@ -30,6 +31,7 @@ export const createArticle = async (req: Request, res: Response) => {
       article_content,
       article_note,
       ref: refObject,
+      article_video: refObject,
       category,
     } as Article);
 
@@ -82,6 +84,9 @@ export const getAllArticles = async (req: Request, res: Response) => {
       );
     }
 
+    // จัดเรียงตาม click_count จากมากไปน้อย
+    queryBuilder = queryBuilder.orderBy("article_clicks.click_count", "DESC");
+
     // นับจำนวนทั้งหมดของรายการที่ค้นหาได้
     const [articles, total] = await queryBuilder.getManyAndCount();
 
@@ -106,6 +111,7 @@ export const getAllArticles = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching articles", error });
   }
 };
+
 
 
 
@@ -139,7 +145,7 @@ export const updateArticle = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Article not found" });
     }
 
-    const { article_name, article_content, article_note, ref, category } =
+    const { article_name, article_content, article_note, ref, article_video, category } =
       req.body;
 
     if (category && !["การแพทย์", "เทคโนโลยี", "ทั่วไป"].includes(category)) {
@@ -154,6 +160,10 @@ export const updateArticle = async (req: Request, res: Response) => {
     // ตรวจสอบว่า ref เป็น JSON object หรือไม่
     if (ref) {
       article.ref = JSON.parse(ref);
+    }
+
+    if (article_video) {
+      article.article_video = JSON.parse(article_video);
     }
 
     if (category) {
@@ -210,6 +220,35 @@ export const deleteArticle = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Article deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting article", error });
+  }
+};
+
+
+export const getOnlyArticles = async (req: Request, res: Response) => {
+  try {
+    const articleRepository = getRepository(Article);
+
+    // สร้าง query สำหรับดึงเฉพาะ id และชื่อแผล (wound_name)
+    const article = await articleRepository
+      .createQueryBuilder("article")
+      .select(["article.id", "article.article_name"]) // เลือกเฉพาะ id และ wound_name
+      .orderBy("article.article_name", "ASC") // จัดเรียงข้อมูลตามชื่อแผล
+      .getMany();
+
+    if (article.length === 0) {
+      return res.status(200).json({ message: "No articles found" });
+    }
+
+    // ส่งข้อมูล wound เฉพาะ id และชื่อแผล (wound_name)
+    res.status(200).json({
+      data: article.map((article) => ({
+        id:article.id,
+        article_name: article.article_name,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching wounds:", error);
+    res.status(500).json({ message: "Error fetching wounds", error });
   }
 };
 

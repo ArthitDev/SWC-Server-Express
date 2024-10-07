@@ -46,4 +46,7 @@ export class Article {
 
   @Column({ type: "json", nullable: true })
   ref: { id: string; value: string }[];
+
+  @Column({ type: "json", nullable: true })
+  article_video: { id: string; value: string }[];
 }

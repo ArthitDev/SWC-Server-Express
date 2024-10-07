@@ -20,9 +20,13 @@ export class PasswordReset {
   @Column()
   token: string;
 
-  @CreateDateColumn({ type: "timestamp" })
+  @CreateDateColumn({ name: "created_at", type: "timestamp" })
   created_at: Date;
 
-  @Column({ type: "timestamp" })
+  @Column({
+    name: "expires_at",
+    type: "timestamp",
+    default: () => "CURRENT_TIMESTAMP + INTERVAL 1 HOUR",
+  })
   expires_at: Date;
 }

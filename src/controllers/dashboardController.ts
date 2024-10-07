@@ -50,10 +50,13 @@ export const getAllArticlesWithClicks = async (
       .select([
         "article.id",
         "article.article_name",
-        "article.created_at",  
-        "article.updated_at", 
+        "article.created_at",
+        "article.updated_at",
         "click.click_count",
       ])
+      .where("article.article_name != :excludedName", {
+        excludedName: "ทำความรู้จักแผล",
+      }) // กรองบทความที่ชื่อ "ทำความรู้จักแผล"
       .orderBy("click.click_count", "DESC")
       .getMany();
 
